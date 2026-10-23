@@ -30,7 +30,11 @@ inv_response = requests.get(
 if inv_response.status_code != 200:
   raise SystemExit(f"Failed to fetch inventory: {inv_response.text}")
 
-with open(FILE_PATH, "w", encoding="utf-8") as f:
-  json.dump(inv_response.json(), f, indent=2)
+# Udtræk listen under 'data' nøglen (eller gem hele responset hvis det allerede var en liste)
+data = inv_response.json()
+inventory_list = data.get("data", data) if isinstance(data, dict) else data
 
-print("Inventory saved locally successfully!")
+with open(FILE_PATH, "w", encoding="utf-8") as f:
+    json.dump(inventory_list, f, indent=2)
+
+print("Inventory saved locally as a direct array successfully!")
