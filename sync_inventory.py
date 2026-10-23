@@ -16,7 +16,7 @@ auth_response = requests.post(
     timeout=30,
 )
 if auth_response.status_code != 200:
-  raise SystemExit(f"Login failed: {auth_response.text}")
+    raise SystemExit(f"Login failed: {auth_response.text}")
 
 token = auth_response.json().get("accessToken")
 
@@ -28,13 +28,21 @@ inv_response = requests.get(
     timeout=30,
 )
 if inv_response.status_code != 200:
-  raise SystemExit(f"Failed to fetch inventory: {inv_response.text}")
+    raise SystemExit(f"Failed to fetch inventory: {inv_response.text}")
 
-# Udtræk listen under 'data' nøglen (eller gem hele responset hvis det allerede var en liste)
-data = inv_response.json()
-inventory_list = data.get("data", data) if isinstance(data, dict) else data
+raw_data = inv_response.json()
+items = raw_data.get("data", raw_data) if isinstance(raw_data, dict) else raw_data
 
+# Slanker filstørrelsen markant ved kun at gemme de felter SyncX skal bruge
+clean_items = []
+for item in items:
+    clean_items.append({
+        "item": str(item.get("item", "")).strip(),
+        "available": int(item.get("available", 0))
+    })
+
+# Gemmer i det strukturerede format SyncX forventer
 with open(FILE_PATH, "w", encoding="utf-8") as f:
-    json.dump(inventory_list, f, indent=2)
+    json.dump({"data": clean_items}, f, indent=2)
 
-print("Inventory saved locally as a direct array successfully!")
+print("Inventory optimized and saved successfully!")
