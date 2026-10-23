@@ -12,7 +12,7 @@ PASSWORD = os.environ.get("MERINOS_PASSWORD")
 # GitHub details
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 # Replace with your actual GitHub username and repository name
-REPO_NAME = "emretaspinar/merinos-sync"
+REPO_NAME = "emretaspinar/LHMerinos"
 FILE_PATH = "inventory.json"
 BRANCH = "main"
 
