@@ -1,0 +1,28 @@
+name: Merinos to GitHub Sync
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # Kører automatisk hver dag kl. 04:00 UTC
+  workflow_dispatch:      # Gør det muligt at køre den manuelt, når du vil
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Run Sync Script
+        env:
+          MERINOS_EMAIL: ${{ secrets.MERINOS_EMAIL }}
+          MERINOS_PASSWORD: ${{ secrets.MERINOS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: python update_and_push.py
