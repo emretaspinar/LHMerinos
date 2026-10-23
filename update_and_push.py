@@ -11,12 +11,15 @@ PASSWORD = os.environ.get("MERINOS_PASSWORD")
 
 # GitHub details
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-# Replace with your actual GitHub username and repository name
-REPO_NAME = "emretaspinar/LHMerinos"
+
+# Henter automatisk "brugernavn/repository" fra GitHub Actions miljøet
+REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "emretaspinar/LHMerinos")
 FILE_PATH = "inventory.json"
 BRANCH = "main"
 
-# 1. Log into Merinos API using your exact working code
+print(f"Target Repository: {REPO_NAME}")
+
+# 1. Log into Merinos API
 print("Logging into Merinos API...")
 auth_response = requests.post(
     f"{MERINOS_URL}/auth/login",
@@ -51,7 +54,7 @@ file_content_str = json.dumps(inventory_data, indent=2)
 print("Pushing updated inventory to GitHub...")
 api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
 headers = {
-    "Authorization": f"Bearer {GITHUB_TOKEN}",
+    "Authorization": f"token {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
 }
 
@@ -71,7 +74,7 @@ payload = {
     "branch": BRANCH,
 }
 if sha:
-  payload["sha"] = sha  # Required if updating an existing file
+  payload["sha"] = sha
 
 put_res = requests.put(api_url, headers=headers, json=payload)
 
