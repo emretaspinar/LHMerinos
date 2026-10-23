@@ -2,14 +2,19 @@ name: Merinos to GitHub Sync
 
 on:
   schedule:
-    - cron: '0 4 * * *'  # Kører automatisk hver dag kl. 04:00 UTC
-  workflow_dispatch:      # Gør det muligt at køre den manuelt, når du vil
+    - cron: '0 6 * * *' # Kører kl. 06:00 hver dag
+  workflow_dispatch: # Gør det muligt at køre den manuelt
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    
+    # VIKTIGT: Dette giver GitHub Action tilladelse til at skrive til repositoriet
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -17,12 +22,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install requests
-        run: pip install requests
+      - name: Install dependencies
+        run: |
+          pip install requests
 
-      - name: Run Sync Script
+      - name: Run update script
         env:
           MERINOS_EMAIL: ${{ secrets.MERINOS_EMAIL }}
           MERINOS_PASSWORD: ${{ secrets.MERINOS_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}  # Sender din Classic Token med ind i scriptet
         run: python update_and_push.py
