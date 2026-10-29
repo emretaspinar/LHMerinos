@@ -27,7 +27,7 @@ if auth_res.status_code != 200:
 token = auth_res.json().get("accessToken")
 
 # 2. Send ordren til saveOrder endpointet
-order_url = "https://api.merinos-eu.de:5050/api/v2/saveOrder"
+order_url = "https://api.merinos-eu.de:5050/api/v2/orders"
 headers = {
     "Authorization": f"Bearer {token}",
     "Content-Type": "application/json"
