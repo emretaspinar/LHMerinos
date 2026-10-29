@@ -10,6 +10,11 @@ if event_path and os.path.exists(event_path):
         event_data = json.load(f)
     order_payload = event_data.get('client_payload', {})
 
+# DEBUG: Udskriv hele payloadet så vi kan se strukturen fra SyncX
+print("--- MODTAGET PAYLOAD FRA SYNCX ---")
+print(json.dumps(order_payload, indent=2))
+print("-----------------------------------")
+
 # 1. Login og hent frisk access token fra Medipa
 login_url = "https://api.merinos-eu.de:5050/api/v2/auth/login"
 credentials = {
@@ -26,7 +31,7 @@ if auth_res.status_code != 200:
 
 token = auth_res.json().get("accessToken")
 
-# 2. Send ordren til saveOrder endpointet
+# 2. Send ordren til Medipa
 order_url = "https://api.merinos-eu.de:5050/api/v2/orders"
 headers = {
     "Authorization": f"Bearer {token}",
