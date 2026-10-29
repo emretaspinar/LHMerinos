@@ -43,5 +43,16 @@ order_res = requests.post(order_url, json=order_payload, headers=headers, verify
 
 print(f"Svar fra Medipa (Status {order_res.status_code}): {order_res.text}")
 
-if order_res.status_code != 200 or order_res.json().get("result") != 1:
+res_json = order_res.json()
+
+# Tjek om ordren blev oprettet med succes (status 200 eller success == true)
+is_success = order_res.status_code == 200 and (
+    res_json.get("success") == True or 
+    res_json.get("data", {}).get("result") == 1
+)
+
+if not is_success:
+    print("Fejl: Ordren blev ikke godkendt af Medipa.")
     exit(1)
+else:
+    print("Succes! Ordren er oprettet hos Medipa.")
