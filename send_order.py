@@ -2,36 +2,35 @@ import os
 import requests
 import json
 
-# Hent ordre-data fra GitHub repository_dispatch payload
+# Læs GitHub event payload
 event_path = os.getenv('GITHUB_EVENT_PATH')
-order_payload = {}
 if event_path and os.path.exists(event_path):
     with open(event_path, 'r') as f:
         event_data = json.load(f)
     order_payload = event_data.get('client_payload', {})
+else:
+    order_payload = {}
 
-# DEBUG: Udskriv hele payloadet så vi kan se strukturen fra SyncX
-print("--- MODTAGET PAYLOAD FRA SYNCX ---")
-print(json.dumps(order_payload, indent=2))
-print("-----------------------------------")
+# SIKKERHEDSVALIDERING (Nødbremse): Blokér ordren øjeblikkeligt, hvis en vare mangler SKU eller er 0
+orders = order_payload.get("data", {}).get("orders", [])
+items_list = order_payload.get("items", [])
 
-# 1. Login og hent frisk access token fra Medipa
-login_url = "https://api.merinos-eu.de:5050/api/v2/auth/login"
-credentials = {
-    "email": os.getenv("MERINOS_EMAIL"),
-    "password": os.getenv("MERINOS_PASSWORD")
-}
+all_items = []
+for order in orders:
+    all_items.extend(order.get("lineItems", []))
+if items_list:
+    all_items.extend(items_list)
 
-print("Logger ind på Medipa API...")
-auth_res = requests.post(login_url, json=credentials, verify="server.crt")
+for item in all_items:
+    item_id = item.get("itemCode") or item.get("item_id")
+    if not item_id or item_id == 0 or item_id == "0":
+        print(f"KRITISK FEJL: Ugyldig eller manglende SKU/item_id opdaget ({item_id}). Ordren afvises for at undgå fejl.")
+        exit(1)
 
-if auth_res.status_code != 200:
-    print(f"Login fejlede: {auth_res.text}")
-    exit(1)
+# Hent token (tilpas afhængigt af dit miljø)
+token = os.getenv('MEDIPA_TOKEN')
 
-token = auth_res.json().get("accessToken")
-
-# 2. Send ordren til Medipa
+# Send ordren til Medipa API
 order_url = "https://api.merinos-eu.de:5050/api/v2/orders"
 headers = {
     "Authorization": f"Bearer {token}",
@@ -39,15 +38,19 @@ headers = {
 }
 
 print("Sender ordre til Medipa...")
-order_res = requests.post(order_url, json=order_payload, headers=headers, verify="server.crt")
+verify_target = "server.crt" if os.path.exists("server.crt") else True
+order_res = requests.post(order_url, json=order_payload, headers=headers, verify=verify_target)
 
 print(f"Svar fra Medipa (Status {order_res.status_code}): {order_res.text}")
 
-res_json = order_res.json()
+try:
+    res_json = order_res.json()
+except Exception:
+    res_json = {}
 
-# Tjek om ordren blev oprettet med succes (status 200 eller success == true)
+# Godkend ordren hvis HTTP-status er 200, og Medipa returnerer success=true eller result=1
 is_success = order_res.status_code == 200 and (
-    res_json.get("success") == True or 
+    res_json.get("success") is True or 
     res_json.get("data", {}).get("result") == 1
 )
 
